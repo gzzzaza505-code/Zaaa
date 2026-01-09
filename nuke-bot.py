@@ -115,10 +115,10 @@ async def on_ready():
     clear()
     print(baner)
     
-    # Set streaming status
+    # Set streaming status - Force update presence
     activity = discord.Streaming(
         name=".gg/wepaid JOIN NOW",
-        url="https://www.twitch.org/4TBSPAAZ"
+        url="https://www.twitch.tv/4TBSPAAZ"
     )
     await client.change_presence(activity=activity)
     
