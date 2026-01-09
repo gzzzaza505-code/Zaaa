@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from colorama import init, Fore as cc
-from os import name as os_name, system
+from os import name as os_name, system, environ
 from sys import exit
 init()
 dr = DR = r = R = cc.LIGHTRED_EX
@@ -101,7 +101,9 @@ while True:
     {y}└─[2] {m}- {g}Exit
 {y}====>{g}''')
     if choice == '1':
-        token = _input(f'{y}Input bot token:{g}')
+        token = environ.get('DISCORD_BOT_TOKEN')
+        if not token:
+            token = _input(f'{y}Input bot token:{g}')
         name = _input(f'{y}Input name for created channels / roles:{g}')
         clear()
         choice_type = _input(f'''
@@ -137,7 +139,7 @@ while True:
             client.run(token)
             input('Nuke finished, press enter for return to menu...')
         except Exception as error:
-            if error == '''Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page. If this is not possible, then consider disabling the privileged intents instead.''':
+            if str(error) == '''Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page. If this is not possible, then consider disabling the privileged intents instead.''':
                 input(f'{r}Intents Error\n{g}For fix -> https://prnt.sc/wmrwut\n{b}Press enter for return...')
             else:
                 input(f'{r}{error}\n{b}Press enter for return...')
