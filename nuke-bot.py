@@ -180,9 +180,9 @@ async def add_premium_slash(interaction: discord.Interaction, user: discord.User
     add_premium(user.id)
     await interaction.response.send_message(f"✅ {user.name} is now Premium!", ephemeral=True)
 
-@client.tree.command(name="announce", description="Send an embed announcement globally or locally")
-@app_commands.describe(title="Announcement Title", message="Announcement Message", global_announcement="Send to all servers?")
-async def announce_slash(interaction: discord.Interaction, title: str, message: str, global_announcement: bool = False):
+@client.tree.command(name="announce", description="Send an embed announcement")
+@app_commands.describe(title="Announcement Title", message="Announcement Message", channel="Channel to send to (optional for local)", global_announcement="Send to all servers?")
+async def announce_slash(interaction: discord.Interaction, title: str, message: str, channel: discord.TextChannel = None, global_announcement: bool = False):
     if not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     
@@ -193,14 +193,17 @@ async def announce_slash(interaction: discord.Interaction, title: str, message: 
     if global_announcement:
         await interaction.response.send_message("📡 Sending global announcement...", ephemeral=True)
         for guild in client.guilds:
-            # Try to find a suitable text channel
-            channel = next((c for c in guild.text_channels if c.permissions_for(guild.me).send_messages), None)
-            if channel:
-                try: await channel.send(embed=embed)
+            target_channel = next((c for c in guild.text_channels if c.permissions_for(guild.me).send_messages), None)
+            if target_channel:
+                try: await target_channel.send(embed=embed)
                 except: continue
     else:
-        await interaction.channel.send(embed=embed)
-        await interaction.response.send_message("✅ Announcement sent!", ephemeral=True)
+        target = channel or interaction.channel
+        try:
+            await target.send(embed=embed)
+            await interaction.response.send_message(f"✅ Announcement sent to {target.mention}!", ephemeral=True)
+        except:
+            await interaction.response.send_message("❌ Failed to send announcement. Check permissions.", ephemeral=True)
 
 # --- Prefix Commands ---
 
@@ -241,20 +244,30 @@ async def flood(ctx, amount: int, *, name: str):
 
 @client.command()
 @commands.is_owner()
-async def announce(ctx, global_announcement: bool, title: str, *, message: str):
-    embed = discord.Embed(title=title, description=message, color=discord.Color.blue())
+async def announce(ctx, global_announcement: bool, channel: discord.TextChannel = None, *, content: str):
+    # For prefix command: .announce [global] [channel] [title|message]
+    # format: title|message
+    if "|" in content:
+        title, message = content.split("|", 1)
+    else:
+        title = "Announcement"
+        message = content
+
+    embed = discord.Embed(title=title.strip(), description=message.strip(), color=discord.Color.blue())
     if client.user.avatar:
         embed.set_thumbnail(url=client.user.avatar.url)
     
     if global_announcement:
         await ctx.send("📡 Sending global announcement...")
         for guild in client.guilds:
-            channel = next((c for c in guild.text_channels if c.permissions_for(guild.me).send_messages), None)
-            if channel:
-                try: await channel.send(embed=embed)
+            target_channel = next((c for c in guild.text_channels if c.permissions_for(guild.me).send_messages), None)
+            if target_channel:
+                try: await target_channel.send(embed=embed)
                 except: continue
     else:
-        await ctx.send(embed=embed)
+        target = channel or ctx.channel
+        try: await target.send(embed=embed)
+        except: await ctx.send("❌ Failed to send.")
 
 try:
     client.run(token)
