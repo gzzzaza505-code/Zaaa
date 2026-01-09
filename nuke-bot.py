@@ -3,6 +3,7 @@ from discord.ext import commands
 from colorama import init, Fore as cc
 from os import name as os_name, system, environ
 from sys import exit
+import random
 init()
 dr = DR = r = R = cc.LIGHTRED_EX
 g = G = cc.LIGHTGREEN_EX
@@ -58,9 +59,15 @@ async def ban_all_members(guild):
 
 async def create_roles(guild, name):
     created = 0
+    names = [
+        "[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊",
+        "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓",
+        "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃",
+        "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"
+    ]
     for _ in range(200 - len(guild.roles)):
         try:
-            await guild.create_role(name=name)
+            await guild.create_role(name=random.choice(names))
             created += 1
         except:
             continue
@@ -68,9 +75,15 @@ async def create_roles(guild, name):
 
 async def create_voice_channels(guild, name):
     created = 0
+    names = [
+        "[😂] 𝐆𝐄𝐓𝐁𝐀𝐂𝐊",
+        "[☠️] 𝟕𝟔𝟐𝐇𝐔𝐑𝐓",
+        "[😭] 𝐅𝐊𝐃 𝐁𝐘 𝐖𝐄𝐏𝐀𝐈𝐃",
+        "[🤑] 𝐖𝐄 𝐎𝐖𝐍 𝐘𝐎𝐔"
+    ]
     for _ in range(200 - len(guild.channels)):
         try:
-            await guild.create_voice_channel(name=name)
+            await guild.create_voice_channel(name=random.choice(names))
             created += 1
         except:
             continue
@@ -104,7 +117,7 @@ while True:
         token = environ.get('DISCORD_BOT_TOKEN')
         if not token:
             token = _input(f'{y}Input bot token:{g}')
-        name = _input(f'{y}Input name for created channels / roles:{g}')
+        name = "default" # No longer used but kept to avoid errors in calls
         clear()
         choice_type = _input(f'''
 {baner}                
