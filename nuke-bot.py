@@ -191,7 +191,12 @@ async def ticket_panel(interaction: discord.Interaction):
     embed.set_footer(text="Drac Services • Support Panel")
     
     await interaction.response.send_message("Panel Sent!", ephemeral=True)
-    await interaction.channel.send(embed=embed, view=TicketView())
+    try:
+        await interaction.channel.send(embed=embed, view=TicketView())
+    except discord.Forbidden:
+        await interaction.followup.send("❌ I don't have permission to send messages in this channel!", ephemeral=True)
+    except Exception as e:
+        await interaction.followup.send(f"❌ An error occurred: {e}", ephemeral=True)
 
 @client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
 async def nuke_slash(interaction: discord.Interaction):
