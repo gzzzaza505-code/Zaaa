@@ -106,6 +106,7 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix=prefix, intents=discord.Intents.all())
 
     async def setup_hook(self):
+        self.add_view(TicketView())
         await self.tree.sync()
 
 client = MyBot()
@@ -129,7 +130,68 @@ async def on_ready():
 {y}[!] Status: Streaming .gg/wepaid JOIN NOW
 {c}--------------------------------------------''')
 
+# --- Ticket System ---
+
+class TicketView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Create Ticket", style=discord.ButtonStyle.danger, custom_id="drac_create_ticket", emoji="🎫")
+    async def create_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        guild = interaction.guild
+        user = interaction.user
+        
+        # Check if ticket already exists
+        existing_channel = discord.utils.get(guild.channels, name=f"ticket-{user.name.lower()}")
+        if existing_channel:
+            return await interaction.response.send_message(f"❌ You already have a ticket open: {existing_channel.mention}", ephemeral=True)
+
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        }
+        
+        channel = await guild.create_text_channel(name=f"ticket-{user.name}", overwrites=overwrites, category=interaction.channel.category)
+        
+        embed = discord.Embed(
+            title="🐉 Drac Support",
+            description=f"Hello {user.mention}, welcome to your ticket. Please describe your issue and wait for staff.",
+            color=discord.Color.red()
+        )
+        embed.set_footer(text="Powered by Drac")
+        
+        view = discord.ui.View()
+        close_button = discord.ui.Button(label="Close Ticket", style=discord.ButtonStyle.secondary, emoji="🔒")
+        
+        async def close_callback(interaction: discord.Interaction):
+            await interaction.response.send_message("Closing ticket in 5 seconds...")
+            await asyncio.sleep(5)
+            await interaction.channel.delete()
+            
+        close_button.callback = close_callback
+        view.add_item(close_button)
+        
+        await channel.send(embed=embed, view=view)
+        await interaction.response.send_message(f"✅ Ticket created: {channel.mention}", ephemeral=True)
+
 # --- Slash Commands ---
+
+@client.tree.command(name="ticket", description="Send the Drac Ticket Panel (Owner Only)")
+async def ticket_panel(interaction: discord.Interaction):
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+        
+    embed = discord.Embed(
+        title="🐲 DRAC SUPPORT SYSTEM",
+        description="Need help? Click the button below to open a private support ticket.\n\n*Our staff will be with you shortly.*",
+        color=discord.Color.dark_red()
+    )
+    embed.set_thumbnail(url=client.user.avatar.url if client.user.avatar else None)
+    embed.set_footer(text="Drac Services • Support Panel")
+    
+    await interaction.response.send_message("Panel Sent!", ephemeral=True)
+    await interaction.channel.send(embed=embed, view=TicketView())
 
 @client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
 async def nuke_slash(interaction: discord.Interaction):
