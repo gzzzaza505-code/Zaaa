@@ -36,6 +36,22 @@ def setup_db():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS premium_users (user_id INTEGER PRIMARY KEY)")
+    cur.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+    conn.commit()
+    conn.close()
+
+def get_setting(key, default=None):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    res = cur.fetchone()
+    conn.close()
+    return res[0] if res else default
+
+def set_setting(key, value):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, str(value)))
     conn.commit()
     conn.close()
 
@@ -157,11 +173,15 @@ class TicketView(discord.ui.View):
         }
         
         # Add staff role overwrites if configured
-        staff_role = getattr(client, 'staff_role', None)
-        if staff_role:
-            overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        staff_role_id = get_setting('staff_role_id')
+        if staff_role_id:
+            staff_role = guild.get_role(int(staff_role_id))
+            if staff_role:
+                overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
             
-        category = getattr(client, 'ticket_category', interaction.channel.category)
+        category_id = get_setting('ticket_category_id')
+        category = guild.get_channel(int(category_id)) if category_id else interaction.channel.category
+        
         channel = await guild.create_text_channel(name=f"ticket-{user.name}", overwrites=overwrites, category=category)
         
         embed = discord.Embed(
@@ -242,10 +262,8 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
     if not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     
-    # Store settings in a simple global or DB later if needed
-    # For now, let's just confirm and use them in the session
-    client.staff_role = role
-    client.ticket_category = category
+    set_setting('staff_role_id', role.id)
+    set_setting('ticket_category_id', category.id)
     
     await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
