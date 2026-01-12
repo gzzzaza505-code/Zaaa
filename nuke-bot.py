@@ -156,7 +156,13 @@ class TicketView(discord.ui.View):
             guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
         
-        channel = await guild.create_text_channel(name=f"ticket-{user.name}", overwrites=overwrites, category=interaction.channel.category)
+        # Add staff role overwrites if configured
+        staff_role = getattr(client, 'staff_role', None)
+        if staff_role:
+            overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+            
+        category = getattr(client, 'ticket_category', interaction.channel.category)
+        channel = await guild.create_text_channel(name=f"ticket-{user.name}", overwrites=overwrites, category=category)
         
         embed = discord.Embed(
             title="🐉 Drac Support",
@@ -229,6 +235,19 @@ async def setup_slash(interaction: discord.Interaction):
     view.add_item(nuke_btn)
     
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+@client.tree.command(name="setup_support", description="Setup support roles and category (Owner Only)")
+@app_commands.describe(role="Staff role for tickets", category="Category for tickets")
+async def setup_support_slash(interaction: discord.Interaction, role: discord.Role, category: discord.CategoryChannel):
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    
+    # Store settings in a simple global or DB later if needed
+    # For now, let's just confirm and use them in the session
+    client.staff_role = role
+    client.ticket_category = category
+    
+    await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
 @client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
 async def nuke_slash(interaction: discord.Interaction):
