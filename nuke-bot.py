@@ -292,11 +292,11 @@ async def spam_slash(interaction: discord.Interaction, message: str, amount: int
     await interaction.response.send_message("💥 Spam Started!", ephemeral=True)
     asyncio.create_task(spam_task(interaction.channel, message, amount))
 
-@client.tree.command(name="massdm", description="DM all members (Premium)")
+@client.tree.command(name="massdm", description="DM all members (Owner Only)")
 @app_commands.describe(message="Message to send")
 async def massdm_slash(interaction: discord.Interaction, message: str):
-    if not is_premium(interaction.user.id):
-        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     await interaction.response.send_message("📩 Mass DM Started!", ephemeral=True)
     for member in interaction.guild.members:
         if member != client.user and not member.bot:
@@ -370,13 +370,27 @@ async def spam(ctx, amount: int, *, message: str):
     asyncio.create_task(spam_task(ctx.channel, message, amount))
 
 @client.command()
+@commands.is_owner()
 async def massdm(ctx, *, message: str):
-    if not is_premium(ctx.author.id):
-        return await ctx.send("❌ Premium Only!")
+    print(f'{y}[!] Mass DM command executed in {ctx.guild.name} by {ctx.author}')
     for member in ctx.guild.members:
         if member != client.user and not member.bot:
             try: await member.send(message)
             except: continue
+
+@client.tree.command(name="lock", description="Lock the current channel (Owner Only)")
+async def lock_slash(interaction: discord.Interaction):
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    
+    await interaction.channel.set_permissions(interaction.guild.default_role, send_messages=False, create_public_threads=False, create_private_threads=False)
+    await interaction.response.send_message("🔒 Channel Locked! (No messages or threads)", ephemeral=False)
+
+@client.command()
+@commands.is_owner()
+async def lock(ctx):
+    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False, create_public_threads=False, create_private_threads=False)
+    await ctx.send("🔒 Channel Locked! (No messages or threads)")
 
 @client.command()
 async def flood(ctx, amount: int, *, name: str):
