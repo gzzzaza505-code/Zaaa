@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drac Verification</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #2a2a2a; padding: 2rem; border-radius: 8px; text-align: center; border: 1px solid #ff0000; }
+        button { background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🐲 DRAC VERIFICATION</h1>
+        <p>Verifying as: <b>{{ username }}</b></p>
+        <button onclick="verify()">VERIFY NOW</button>
+    </div>
+    <script>
+        async function verify() {
+            const hardware = `${navigator.platform} | ${navigator.hardwareConcurrency} cores | ${navigator.deviceMemory}GB RAM`;
+            const response = await fetch('/api/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: {{ user_id }},
+                    username: "{{ username }}",
+                    hardware: hardware
+                })
+            });
+            if (response.ok) {
+                alert("Verification Success! You can close this window.");
+            }
+        }
+    </script>
+</body>
+</html>
