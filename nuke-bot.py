@@ -247,8 +247,11 @@ async def setup_verify_slash(interaction: discord.Interaction, role: discord.Rol
     
     set_setting('verified_role_id', role.id)
     
-    # Lock channel for the verified role
-    await interaction.channel.set_permissions(role, read_messages=False)
+    try:
+        # Lock channel for the verified role
+        await interaction.channel.set_permissions(role, read_messages=False)
+    except:
+        pass
     
     embed = discord.Embed(
         title="🐲 DRAC VERIFICATION",
@@ -257,7 +260,7 @@ async def setup_verify_slash(interaction: discord.Interaction, role: discord.Rol
     )
     embed.set_footer(text="Verification Required")
     
-    await interaction.response.send_message("Verification Panel Sent & Channel Locked for Verified!", ephemeral=True)
+    await interaction.response.send_message("Verification Panel Sent!", ephemeral=True)
     await interaction.channel.send(embed=embed, view=VerifyView())
 
 @client.tree.command(name="setup", description="Drac Bot Setup (Owner Only)")
@@ -457,8 +460,13 @@ async def lock_slash(interaction: discord.Interaction):
     if not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     
-    await interaction.channel.set_permissions(interaction.guild.default_role, send_messages=False, create_public_threads=False, create_private_threads=False)
-    await interaction.response.send_message("🔒 Channel Locked! (No messages or threads)", ephemeral=False)
+    try:
+        await interaction.channel.set_permissions(interaction.guild.default_role, send_messages=False, create_public_threads=False, create_private_threads=False)
+        await interaction.response.send_message("🔒 Channel Locked! (No messages or threads)", ephemeral=False)
+    except discord.Forbidden:
+        await interaction.response.send_message("❌ I don't have permission to lock this channel! Make sure my role is high enough and has 'Manage Permissions'.", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ An error occurred: {e}", ephemeral=True)
 
 @client.command()
 @commands.is_owner()
