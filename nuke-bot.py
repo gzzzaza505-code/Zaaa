@@ -150,6 +150,45 @@ async def on_ready():
 {y}[!] Slash Commands Enabled
 {y}[!] Status: Streaming .gg/wepaid JOIN NOW
 {c}--------------------------------------------''')
+    asyncio.create_task(check_logs_task())
+
+async def check_logs_task():
+    while True:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("SELECT key, value FROM settings WHERE key LIKE 'log_queue_%'")
+            rows = cur.fetchall()
+            
+            if rows:
+                log_channel_id = get_setting('verify_log_channel_id')
+                if log_channel_id:
+                    channel = client.get_channel(int(log_channel_id))
+                    if channel:
+                        for key, value in rows:
+                            try:
+                                username, ip, hardware = value.split('|')
+                                user_id = key.split('_')[2]
+                                
+                                embed = discord.Embed(
+                                    title="🐲 DRAC VERIFICATION LOG",
+                                    color=discord.Color.green(),
+                                    timestamp=datetime.datetime.now()
+                                )
+                                embed.add_field(name="User", value=f"<@{user_id}> ({username})", inline=False)
+                                embed.add_field(name="IP Address", value=f"`{ip}`", inline=True)
+                                embed.add_field(name="Hardware", value=f"`{hardware}`", inline=False)
+                                embed.set_footer(text="Drac Services Logging")
+                                
+                                await channel.send(embed=embed)
+                                cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                            except Exception as e:
+                                print(f"Processing row error: {e}")
+                conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Log Task Error: {e}")
+        await asyncio.sleep(5)
 
 # --- Ticket System ---
 

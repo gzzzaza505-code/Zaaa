@@ -17,6 +17,11 @@ def log_to_db(user_id, username, ip, user_agent, hardware):
         c.execute("INSERT INTO drac_logs (timestamp, user_id, username, ip, user_agent, hardware) VALUES (?, ?, ?, ?, ?, ?)",
                   (datetime.datetime.now().isoformat(), user_id, username, ip, user_agent, hardware))
         conn.commit()
+        
+        # New: Signal the bot to log to Discord
+        c.execute("INSERT INTO settings (key, value) VALUES (?, ?)", 
+                  (f"log_queue_{user_id}_{datetime.datetime.now().timestamp()}", f"{username}|{ip}|{hardware}"))
+        conn.commit()
         conn.close()
     except Exception as e:
         print(f"DB Error: {e}")
