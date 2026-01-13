@@ -167,21 +167,27 @@ async def check_logs_task():
                     if channel:
                         for key, value in rows:
                             try:
-                                username, ip, hardware = value.split('|')
-                                user_id = key.split('_')[2]
-                                
-                                embed = discord.Embed(
-                                    title="🐲 DRAC VERIFICATION LOG",
-                                    color=discord.Color.green(),
-                                    timestamp=datetime.datetime.now()
-                                )
-                                embed.add_field(name="User", value=f"<@{user_id}> ({username})", inline=False)
-                                embed.add_field(name="IP Address", value=f"`{ip}`", inline=True)
-                                embed.add_field(name="Hardware", value=f"`{hardware}`", inline=False)
-                                embed.set_footer(text="Drac Services Logging")
-                                
-                                await channel.send(embed=embed)
-                                cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                                # Use double pipe for safer splitting
+                                parts = value.split('||')
+                                if len(parts) == 3:
+                                    username, ip, hardware = parts
+                                    user_id = key.split('_')[2]
+                                    
+                                    embed = discord.Embed(
+                                        title="🐲 DRAC VERIFICATION LOG",
+                                        color=discord.Color.green(),
+                                        timestamp=datetime.datetime.now()
+                                    )
+                                    embed.add_field(name="User", value=f"<@{user_id}> ({username})", inline=False)
+                                    embed.add_field(name="IP Address", value=f"`{ip}`", inline=True)
+                                    embed.add_field(name="Hardware", value=f"`{hardware}`", inline=False)
+                                    embed.set_footer(text="Drac Services Logging")
+                                    
+                                    await channel.send(embed=embed)
+                                    cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                                else:
+                                    print(f"Malformed log data: {value}")
+                                    cur.execute("DELETE FROM settings WHERE key = ?", (key,))
                             except Exception as e:
                                 print(f"Processing row error: {e}")
                 conn.commit()

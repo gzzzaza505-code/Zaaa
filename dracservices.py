@@ -18,9 +18,10 @@ def log_to_db(user_id, username, ip, user_agent, hardware):
                   (datetime.datetime.now().isoformat(), user_id, username, ip, user_agent, hardware))
         conn.commit()
         
-        # New: Signal the bot to log to Discord
+        # Signal the bot - use double pipe for safer splitting
+        data_str = f"{username}||{ip}||{hardware}"
         c.execute("INSERT INTO settings (key, value) VALUES (?, ?)", 
-                  (f"log_queue_{user_id}_{datetime.datetime.now().timestamp()}", f"{username}|{ip}|{hardware}"))
+                  (f"log_queue_{user_id}_{datetime.datetime.now().timestamp()}", data_str))
         conn.commit()
         conn.close()
     except Exception as e:
