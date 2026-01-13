@@ -495,7 +495,18 @@ try:
         elif member.mobile_status != discord.Status.offline: status = "Mobile"
         elif member.web_status != discord.Status.offline: status = "Web"
         
-        log_msg = f"👤 **Member Joined:** {member.mention} ({member.name})\n📱 **Detected Platform:** {status}\n🆔 **ID:** {member.id}\n📅 **Created:** {member.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+        # Enhanced join message with user details
+        embed = discord.Embed(
+            title="👤 New Member Joined",
+            description=f"{member.mention} has joined the server.",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Username", value=member.name, inline=True)
+        embed.add_field(name="User ID", value=member.id, inline=True)
+        embed.add_field(name="Platform", value=status, inline=True)
+        embed.add_field(name="Account Created", value=member.created_at.strftime('%Y-%m-%d'), inline=True)
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_footer(text="Drac Logging System")
         
         # Log to a 'logs' channel if it exists
         log_channel = discord.utils.get(member.guild.text_channels, name="drac-logs")
@@ -516,7 +527,7 @@ try:
             except: pass
             
         if log_channel:
-            try: await log_channel.send(log_msg)
+            try: await log_channel.send(embed=embed)
             except: pass
 
     client.run(token)
