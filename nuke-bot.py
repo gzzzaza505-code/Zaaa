@@ -127,6 +127,7 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         self.add_view(TicketView())
+        self.add_view(VerifyView())
         await self.tree.sync()
 
 client = MyBot()
@@ -227,6 +228,46 @@ async def ticket_panel(interaction: discord.Interaction):
         await interaction.followup.send("❌ I don't have permission to send messages in this channel!", ephemeral=True)
     except Exception as e:
         await interaction.followup.send(f"❌ An error occurred: {e}", ephemeral=True)
+
+# --- Verification System ---
+
+class VerifyView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Verify", style=discord.ButtonStyle.success, custom_id="drac_verify_button", emoji="✅")
+    async def verify_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user = interaction.user
+        guild = interaction.guild
+        
+        # Log the verification
+        log_channel = discord.utils.get(guild.text_channels, name="drac-logs")
+        if log_channel:
+            embed = discord.Embed(
+                title="✅ Member Verified",
+                description=f"{user.mention} ({user.name}) has verified.",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="Drac Verification System")
+            try: await log_channel.send(embed=embed)
+            except: pass
+            
+        await interaction.response.send_message("✅ Success! You have been verified.", ephemeral=True)
+
+@client.tree.command(name="setup_verify", description="Send the verification panel (Owner Only)")
+async def setup_verify_slash(interaction: discord.Interaction):
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    
+    embed = discord.Embed(
+        title="🐲 DRAC VERIFICATION",
+        description="Click the button below to verify yourself and gain access to the server.",
+        color=discord.Color.green()
+    )
+    embed.set_footer(text="Verification Required")
+    
+    await interaction.response.send_message("Verification Panel Sent!", ephemeral=True)
+    await interaction.channel.send(embed=embed, view=VerifyView())
 
 @client.tree.command(name="setup", description="Drac Bot Setup (Owner Only)")
 async def setup_slash(interaction: discord.Interaction):
