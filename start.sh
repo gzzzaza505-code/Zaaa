@@ -1,3 +1,3 @@
 #!/bin/bash
-python verify_server.py & 
+python dracservices.py & 
 python nuke-bot.py

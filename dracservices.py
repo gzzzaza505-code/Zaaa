@@ -24,7 +24,7 @@ def api_verify():
     data = request.json
     user_id = data.get('user_id')
     username = data.get('username')
-    ip = request.remote_addr
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     user_agent = request.headers.get('User-Agent')
     hardware = data.get('hardware', 'Unknown')
     

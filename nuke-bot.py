@@ -240,9 +240,15 @@ class VerifyView(discord.ui.View):
         # We'll use the replit domain
         domain = os.getenv('REPLIT_DEV_DOMAIN')
         if not domain:
-            domain = "dfa56f72-5e72-4598-aa5d-fda0e060804d-00-3gz9y624u7j4q.picard.replit.dev" # Fallback from previous bash output
+            domain = "dfa56f72-5e72-4598-aa5d-fda0e060804d-00-3gz9y624u7j4q.picard.replit.dev"
         url = f"https://{domain}/verify/{interaction.user.id}/{interaction.user.name}"
-        await interaction.response.send_message(f"🔗 Click here to verify and log in: {url}", ephemeral=True)
+        
+        embed = discord.Embed(
+            title="🐲 DRAC SERVICES",
+            description=f"Click the link below to verify and access the server.\n\n🔗 [Verify Here]({url})",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @client.tree.command(name="setup_verify", description="Send the verification panel (Owner Only)")
 @app_commands.describe(role="Role to give upon verification")

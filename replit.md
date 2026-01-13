@@ -13,16 +13,20 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Core Technology Stack
-- **Language:** Python 3.6 - 3.8
+- **Language:** Python 3.11
 - **Discord Library:** discord.py with commands extension and app_commands (slash commands)
 - **Terminal Styling:** colorama for cross-platform colored output
 - **Database:** SQLite for local data persistence
+- **Web Framework:** Flask for verification and logging
 
 ### Application Structure
 The project has a simple single-file architecture:
 - `nuke-bot.py` - Main bot file containing all logic
+- `dracservices.py` - Web server for verification and data logging
+- `templates/verify.html` - HTML template for the verification page
 - `requirements.txt` - Python dependencies
 - `bot_data.db` - SQLite database file (created at runtime)
+- `start.sh` - Startup script to run both bot and web server
 
 ### Bot Features Architecture
 1. **Channel Management** - Delete all channels, create new channels
