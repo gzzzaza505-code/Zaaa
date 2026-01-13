@@ -250,29 +250,50 @@ class VerifyView(discord.ui.View):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@client.tree.command(name="setup_verify", description="Send the verification panel (Owner Only)")
-@app_commands.describe(role="Role to give upon verification")
-async def setup_verify_slash(interaction: discord.Interaction, role: discord.Role):
+@client.tree.command(name="setup_verify", description="Setup verification system (Owner Only)")
+@app_commands.describe(role="Role to give upon verification", log_channel="Channel for verification logs")
+async def setup_verify_slash(interaction: discord.Interaction, role: discord.Role, log_channel: discord.TextChannel):
     if not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     
     set_setting('verified_role_id', role.id)
+    set_setting('verify_log_channel_id', log_channel.id)
     
-    try:
-        # Lock channel for the verified role
-        await interaction.channel.set_permissions(role, read_messages=False)
-    except:
-        pass
+    await interaction.response.defer(ephemeral=True)
     
+    # Autolock all channels for the verified role (only unverified can see them if not verified)
+    # Usually, we want to HIDE all channels from @everyone and show them to verified
+    # But user asked to "autolock every channel to verify"
+    # Logic: Set @everyone to NOT see channels, and Verified role TO see channels.
+    
+    success_count = 0
+    fail_count = 0
+    
+    for channel in interaction.guild.channels:
+        try:
+            # Hide from everyone
+            await channel.set_permissions(interaction.guild.default_role, view_channel=False)
+            # Show to verified
+            await channel.set_permissions(role, view_channel=True)
+            success_count += 1
+        except:
+            fail_count += 1
+            
     embed = discord.Embed(
+        title="🐲 DRAC VERIFICATION SETUP",
+        description=f"✅ Verification system configured.\n\n**Role:** {role.mention}\n**Logs:** {log_channel.mention}\n**Channels Locked:** {success_count}\n**Failed:** {fail_count}",
+        color=discord.Color.green()
+    )
+    
+    verify_embed = discord.Embed(
         title="🐲 DRAC VERIFICATION",
         description="Click the button below to verify yourself and gain access to the server.",
         color=discord.Color.green()
     )
-    embed.set_footer(text="Verification Required")
+    verify_embed.set_footer(text="Verification Required")
     
-    await interaction.response.send_message("Verification Panel Sent!", ephemeral=True)
-    await interaction.channel.send(embed=embed, view=VerifyView())
+    await interaction.followup.send(embed=embed, ephemeral=True)
+    await interaction.channel.send(embed=verify_embed, view=VerifyView())
 
 @client.tree.command(name="setup", description="Drac Bot Setup (Owner Only)")
 async def setup_slash(interaction: discord.Interaction):
