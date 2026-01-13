@@ -237,7 +237,33 @@ class VerifyView(discord.ui.View):
 
     @discord.ui.button(label="Verify", style=discord.ButtonStyle.success, custom_id="drac_verify_button", emoji="✅")
     async def verify_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("🔗 Click here to verify: [https://verify.drac.services](https://verify.drac.services)", ephemeral=True)
+        user = interaction.user
+        guild = interaction.guild
+        
+        verified_role_id = get_setting('verified_role_id')
+        if verified_role_id:
+            role = guild.get_role(int(verified_role_id))
+            if role:
+                try: 
+                    await user.add_roles(role)
+                except: 
+                    pass
+
+        # Log the verification
+        log_channel = discord.utils.get(guild.text_channels, name="drac-logs")
+        if log_channel:
+            embed = discord.Embed(
+                title="✅ Member Verified",
+                description=f"{user.mention} ({user.name}) has verified through the system.",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="Drac Verification System")
+            try: 
+                await log_channel.send(embed=embed)
+            except: 
+                pass
+            
+        await interaction.response.send_message("✅ Success! You have been verified and granted access.", ephemeral=True)
 
 @client.tree.command(name="setup_verify", description="Send the verification panel (Owner Only)")
 @app_commands.describe(role="Role to give upon verification")
