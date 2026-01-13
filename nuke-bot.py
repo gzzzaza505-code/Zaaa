@@ -313,11 +313,11 @@ async def flood_slash(interaction: discord.Interaction, name: str, amount: int =
         try: await interaction.guild.create_text_channel(name=name)
         except: break
 
-@client.tree.command(name="nickname_all", description="Change everyone's nickname (Premium)")
+@client.tree.command(name="nickname_all", description="Change everyone's nickname (Owner Only)")
 @app_commands.describe(nickname="New nickname for everyone")
 async def nickname_all_slash(interaction: discord.Interaction, nickname: str):
-    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     await interaction.response.send_message("🏷️ Changing nicknames...", ephemeral=True)
     for member in interaction.guild.members:
         try: await member.edit(nick=nickname)
@@ -443,9 +443,8 @@ async def flood(ctx, amount: int, *, name: str):
         except: break
 
 @client.command()
+@commands.is_owner()
 async def nickall(ctx, *, nickname: str):
-    if not is_premium(ctx.author.id) and not await client.is_owner(ctx.author):
-        return await ctx.send("❌ Premium Only!")
     await ctx.send("🏷️ Changing nicknames...")
     for member in ctx.guild.members:
         try: await member.edit(nick=nickname)
