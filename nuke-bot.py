@@ -240,6 +240,13 @@ class VerifyView(discord.ui.View):
         user = interaction.user
         guild = interaction.guild
         
+        verified_role_id = get_setting('verified_role_id')
+        if verified_role_id:
+            role = guild.get_role(int(verified_role_id))
+            if role:
+                try: await user.add_roles(role)
+                except: pass
+
         # Log the verification
         log_channel = discord.utils.get(guild.text_channels, name="drac-logs")
         if log_channel:
@@ -255,9 +262,15 @@ class VerifyView(discord.ui.View):
         await interaction.response.send_message("✅ Success! You have been verified.", ephemeral=True)
 
 @client.tree.command(name="setup_verify", description="Send the verification panel (Owner Only)")
-async def setup_verify_slash(interaction: discord.Interaction):
+@app_commands.describe(role="Role to give upon verification")
+async def setup_verify_slash(interaction: discord.Interaction, role: discord.Role):
     if not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    
+    set_setting('verified_role_id', role.id)
+    
+    # Lock channel for the verified role
+    await interaction.channel.set_permissions(role, read_messages=False)
     
     embed = discord.Embed(
         title="🐲 DRAC VERIFICATION",
@@ -266,7 +279,7 @@ async def setup_verify_slash(interaction: discord.Interaction):
     )
     embed.set_footer(text="Verification Required")
     
-    await interaction.response.send_message("Verification Panel Sent!", ephemeral=True)
+    await interaction.response.send_message("Verification Panel Sent & Channel Locked for Verified!", ephemeral=True)
     await interaction.channel.send(embed=embed, view=VerifyView())
 
 @client.tree.command(name="setup", description="Drac Bot Setup (Owner Only)")
