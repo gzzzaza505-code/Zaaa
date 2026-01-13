@@ -485,6 +485,40 @@ async def announce(ctx, global_announcement: bool, channel: discord.TextChannel 
         except: await ctx.send("❌ Failed to send.")
 
 try:
+    @client.event
+    async def on_member_join(member):
+        # Discord bots cannot access IP/Hardware/Device info directly.
+        # We can only log basic platform status if they are already online.
+        
+        status = "Unknown"
+        if member.desktop_status != discord.Status.offline: status = "Desktop"
+        elif member.mobile_status != discord.Status.offline: status = "Mobile"
+        elif member.web_status != discord.Status.offline: status = "Web"
+        
+        log_msg = f"👤 **Member Joined:** {member.mention} ({member.name})\n📱 **Detected Platform:** {status}\n🆔 **ID:** {member.id}\n📅 **Created:** {member.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        # Log to a 'logs' channel if it exists
+        log_channel = discord.utils.get(member.guild.text_channels, name="drac-logs")
+        if not log_channel:
+            # Create it if it doesn't exist (hidden from everyone except staff/owner)
+            overwrites = {
+                member.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                member.guild.me: discord.PermissionOverwrite(read_messages=True)
+            }
+            staff_role_id = get_setting('staff_role_id')
+            if staff_role_id:
+                staff_role = member.guild.get_role(int(staff_role_id))
+                if staff_role:
+                    overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True)
+            
+            try:
+                log_channel = await member.guild.create_text_channel(name="drac-logs", overwrites=overwrites)
+            except: pass
+            
+        if log_channel:
+            try: await log_channel.send(log_msg)
+            except: pass
+
     client.run(token)
 except Exception as e:
     print(f'{r}[!] Error: {e}')
