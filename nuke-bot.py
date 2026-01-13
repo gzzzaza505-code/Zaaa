@@ -238,7 +238,7 @@ class VerifyView(discord.ui.View):
     @discord.ui.button(label="Verify", style=discord.ButtonStyle.success, custom_id="drac_verify_button", emoji="✅")
     async def verify_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # We'll use the replit domain
-        domain = os.getenv('REPLIT_DEV_DOMAIN')
+        domain = environ.get('REPLIT_DEV_DOMAIN')
         if not domain:
             domain = "dfa56f72-5e72-4598-aa5d-fda0e060804d-00-3gz9y624u7j4q.picard.replit.dev"
         url = f"https://{domain}/verify/{interaction.user.id}/{interaction.user.name}"
