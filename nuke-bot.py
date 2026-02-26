@@ -145,15 +145,6 @@ async def on_ready():
     )
     await client.change_presence(activity=activity)
     
-    # Auto-leave non-whitelisted guilds
-    for guild in client.guilds:
-        if guild.id != WHITELISTED_SERVER_ID:
-            try:
-                await guild.leave()
-                print(f"{r}[!] Left non-whitelisted guild: {guild.name} ({guild.id})")
-            except Exception as e:
-                print(f"{r}[!] Failed to leave guild {guild.name}: {e}")
-    
     print(f'''
 {c}--------------------------------------------
 {g}[+] Logged in as {client.user}
@@ -162,15 +153,6 @@ async def on_ready():
 {y}[!] Whitelisted Server: {WHITELISTED_SERVER_ID}
 {c}--------------------------------------------''')
     asyncio.create_task(check_logs_task())
-
-@client.event
-async def on_guild_join(guild):
-    if guild.id != WHITELISTED_SERVER_ID:
-        try:
-            await guild.leave()
-            print(f"{r}[!] Left unauthorized guild: {guild.name} ({guild.id})")
-        except Exception as e:
-            print(f"{r}[!] Failed to leave unauthorized guild {guild.name}: {e}")
 
 async def check_logs_task():
     while True:
