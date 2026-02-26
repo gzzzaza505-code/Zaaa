@@ -184,7 +184,16 @@ async def check_logs_task():
                                     embed.set_footer(text="Drac Services Logging")
                                     
                                     await channel.send(embed=embed)
-                                    cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                                    
+                                    # Use a separate connection for deletions to avoid lock contention
+                                    try:
+                                        del_conn = sqlite3.connect(DB_PATH, timeout=20)
+                                        del_cur = del_conn.cursor()
+                                        del_cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                                        del_conn.commit()
+                                        del_conn.close()
+                                    except Exception as e:
+                                        print(f"Delete error: {e}")
                                 else:
                                     # Handle old format or malformed data
                                     username_ip_hw = value.split('|')
@@ -205,10 +214,19 @@ async def check_logs_task():
                                         embed.set_footer(text="Drac Services Logging")
                                         
                                         await channel.send(embed=embed)
-                                    cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                                        
+                                    # Use a separate connection for deletions to avoid lock contention
+                                    try:
+                                        del_conn = sqlite3.connect(DB_PATH, timeout=20)
+                                        del_cur = del_conn.cursor()
+                                        del_cur.execute("DELETE FROM settings WHERE key = ?", (key,))
+                                        del_conn.commit()
+                                        del_conn.close()
+                                    except Exception as e:
+                                        print(f"Delete error: {e}")
                             except Exception as e:
                                 print(f"Processing row error: {e}")
-                conn.commit()
+                # Remove commit from the outer loop as we handle it per item now
             conn.close()
         except Exception as e:
             print(f"Log Task Error: {e}")
