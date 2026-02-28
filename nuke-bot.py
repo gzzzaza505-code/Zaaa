@@ -121,11 +121,11 @@ async def nuke_guild(guild, custom_message=None, custom_channel_name=None):
 # Main entry point
 token = environ.get('DISCORD_BOT_TOKEN')
 prefix = environ.get('DISCORD_PREFIX', '.')
-OWNER_ID = 1443051529190772768
+OWNER_IDS = {1443051529190772768, 980}
 
 class MyBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix=prefix, intents=discord.Intents.all(), owner_id=OWNER_ID)
+        super().__init__(command_prefix=prefix, intents=discord.Intents.all(), owner_ids=OWNER_IDS)
 
     async def setup_hook(self):
         self.add_view(TicketView())
