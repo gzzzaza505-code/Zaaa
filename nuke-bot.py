@@ -190,10 +190,9 @@ async def check_logs_task():
             
             if rows:
                 log_channel_id = 1479710105292374068
-                if log_channel_id:
-                    channel = client.get_channel(int(log_channel_id))
-                    if channel:
-                        for key, value in rows:
+                channel = client.get_channel(log_channel_id)
+                if channel:
+                    for key, value in rows:
                             try:
                                 # Use double pipe for safer splitting
                                 parts = value.split('||')
