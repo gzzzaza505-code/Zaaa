@@ -173,7 +173,9 @@ async def on_member_join(member):
     embed.add_field(name="Created", value=member.created_at.strftime('%Y-%m-%d'), inline=True)
     embed.set_thumbnail(url=member.display_avatar.url)
     
-    log_channel = discord.utils.get(member.guild.text_channels, name="drac-logs")
+    # We stopped sending to drac-logs and moved to the dedicated verify log channel
+    log_channel_id = 1479710105292374068
+    log_channel = client.get_channel(log_channel_id)
     if log_channel:
         try: await log_channel.send(embed=embed)
         except: pass
