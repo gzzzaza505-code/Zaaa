@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bot Token Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 20px;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 3rem;
+            border-radius: 12px;
+            border: 2px solid #ff0000;
+            box-shadow: 0 8px 32px rgba(255, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            color: #ff0000;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.7rem;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #555;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 8px rgba(255, 0, 0, 0.3);
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-save {
+            background: #ff0000;
+            color: white;
+        }
+        .btn-save:hover {
+            background: #cc0000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
+        }
+        .btn-show {
+            background: #555;
+            color: white;
+        }
+        .btn-show:hover {
+            background: #777;
+            transform: translateY(-2px);
+        }
+        .status-message {
+            text-align: center;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-weight: 600;
+        }
+        .status-message.success {
+            background: #2d5d2d;
+            color: #90EE90;
+            border: 1px solid #90EE90;
+            display: block;
+        }
+        .status-message.error {
+            background: #5d2d2d;
+            color: #ff9999;
+            border: 1px solid #ff9999;
+            display: block;
+        }
+        .token-info {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #444;
+            text-align: center;
+            display: none;
+        }
+        .token-info.show {
+            display: block;
+        }
+        .token-info p {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+        .token-masked {
+            font-family: 'Courier New', monospace;
+            color: #ff0000;
+            word-break: break-all;
+        }
+        .help-text {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐲 TOKEN MANAGER</h1>
+        
+        <div class="status-message" id="statusMessage"></div>
+        
+        <div class="form-group">
+            <label for="tokenInput">Discord Bot Token:</label>
+            <input 
+                type="password" 
+                id="tokenInput" 
+                placeholder="Paste your Discord bot token here"
+                spellcheck="false"
+            >
+            <div class="help-text">Your token is stored securely and only shown to you.</div>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-save" onclick="saveToken()">SAVE TOKEN</button>
+            <button class="btn-show" onclick="toggleShowToken()">SHOW SAVED</button>
+        </div>
+        
+        <div class="token-info" id="tokenInfo">
+            <p>Saved Token (masked):</p>
+            <p class="token-masked" id="tokenMasked">-</p>
+        </div>
+    </div>
+
+    <script>
+        async function saveToken() {
+            const token = document.getElementById('tokenInput').value;
+            const statusDiv = document.getElementById('statusMessage');
+            
+            if (!token) {
+                showStatus('Please enter a token', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus('✓ Token saved successfully!', 'success');
+                    document.getElementById('tokenInput').value = '';
+                    await loadTokenInfo();
+                } else {
+                    showStatus('✗ Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showStatus('✗ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadTokenInfo() {
+            try {
+                const response = await fetch('/api/token');
+                const data = await response.json();
+                
+                if (data.token_exists) {
+                    document.getElementById('tokenMasked').textContent = data.token_masked;
+                    document.getElementById('tokenInfo').classList.add('show');
+                } else {
+                    document.getElementById('tokenInfo').classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Error loading token info:', error);
+            }
+        }
+        
+        function toggleShowToken() {
+            const tokenInfo = document.getElementById('tokenInfo');
+            if (tokenInfo.classList.contains('show')) {
+                tokenInfo.classList.remove('show');
+            } else {
+                loadTokenInfo();
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            setTimeout(() => {
+                statusDiv.className = 'status-message';
+            }, 5000);
+        }
+        
+        // Load token info on page load
+        window.addEventListener('load', loadTokenInfo);
+    </script>
+</body>
+</html>

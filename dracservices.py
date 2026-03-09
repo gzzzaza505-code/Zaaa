@@ -48,6 +48,44 @@ def api_verify():
     log_to_db(user_id, username, ip, user_agent, hardware)
     return jsonify({"status": "success"})
 
+@app.route('/token')
+def token_page():
+    return render_template('token.html')
+
+@app.route('/api/token', methods=['POST'])
+def save_token():
+    data = request.json
+    token = data.get('token', '').strip()
+    if not token:
+        return jsonify({"status": "error", "message": "Token cannot be empty"}), 400
+    
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", 
+                  ("bot_token", token))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "Token saved successfully"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/token', methods=['GET'])
+def get_token():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute("SELECT value FROM settings WHERE key = ?", ("bot_token",))
+        res = c.fetchone()
+        conn.close()
+        if res:
+            token = res[0]
+            masked = token[:10] + '*' * (len(token) - 14) + token[-4:] if len(token) > 14 else '*' * len(token)
+            return jsonify({"status": "success", "token_masked": masked, "token_exists": True})
+        return jsonify({"status": "success", "token_exists": False})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     # Initialize log table if not exists
     try:
